@@ -19,13 +19,29 @@ FROM base as build
 
 # Install packages needed to build gems
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libvips pkg-config
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    libsqlite3-dev \
+    libffi-dev \
+    pkg-config \
+    git \
+    libvips \
+    zlib1g-dev \
+    libyaml-dev
 
+    
 # Install application gems
 COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    # rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
+
+# bootsnap用のキャッシュディレクトリを作成
+RUN mkdir -p tmp/cache
+
+RUN gem install bundler -v 2.7.1
+RUN bundler -v
+RUN bundle env
+RUN bundle install --verbose
+    #rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
+RUN bundle exec bootsnap precompile --gemfile
 
 # Copy application code
 COPY . .
@@ -60,3 +76,6 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 CMD ["./bin/rails", "server"]
+
+
+
